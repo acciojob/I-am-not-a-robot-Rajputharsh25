@@ -1,76 +1,72 @@
-// 1. Initial Data
 const imageClasses = ['img1', 'img2', 'img3', 'img4', 'img5'];
-let selectedImages = [];
+let selectedTiles = [];
 
 const container = document.getElementById('image-container');
 const resetBtn = document.getElementById('reset');
 const verifyBtn = document.getElementById('verify');
 const para = document.getElementById('para');
-const header = document.getElementById('h');
 
-// 2. Randomize and Display Images
+// State 1: Initialization / Reset
 function init() {
-    selectedImages = [];
+    selectedTiles = [];
     para.textContent = "";
     resetBtn.style.display = 'none';
     verifyBtn.style.display = 'none';
     container.innerHTML = "";
 
-    // Choose one image to repeat
-    const duplicate = imageClasses[Math.floor(Math.random() * imageClasses.length)];
-    const imagesToDisplay = [...imageClasses, duplicate];
+    // Requirement: 5 unique, 1 duplicate
+    const duplicateClass = imageClasses[Math.floor(Math.random() * imageClasses.length)];
+    const imagesToRender = [...imageClasses, duplicateClass];
 
-    // Shuffle images using Fisher-Yates algorithm
-    for (let i = imagesToDisplay.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [imagesToDisplay[i], imagesToDisplay[j]] = [imagesToDisplay[j], imagesToDisplay[i]];
-    }
+    // Randomized Image Display: Shuffling the 6 images
+    imagesToRender.sort(() => Math.random() - 0.5);
 
-    // Render images
-    imagesToDisplay.forEach((className, index) => {
+    imagesToRender.forEach((className, index) => {
         const img = document.createElement('img');
         img.className = className;
-        img.dataset.index = index; // Unique identifier for each tile
-        img.addEventListener('click', handleImageClick);
+        // Use index to ensure we don't treat clicking the same physical tile twice as two selections
+        img.setAttribute('data-index', index); 
+        img.addEventListener('click', handleTileClick);
         container.appendChild(img);
     });
 }
 
-// 3. Click Behavior and State Management
-function handleImageClick(e) {
-    const img = e.target;
+function handleTileClick(e) {
+    const tile = e.target;
+    const tileIndex = tile.getAttribute('data-index');
 
-    // Prevent clicking the same tile twice
-    if (selectedImages.includes(img)) return;
+    // Prevent double-clicking the same image
+    if (selectedTiles.find(t => t.index === tileIndex)) return;
+    
+    // Clicking more than two images should not display the Verify button
+    if (selectedTiles.length >= 2) return;
 
     // State 2: At least one tile clicked
-    selectedImages.push(img);
-    img.classList.add('selected');
+    selectedTiles.push({ class: tile.className, index: tileIndex });
+    tile.classList.add('selected');
     resetBtn.style.display = 'inline';
 
-    // State 3: Exactly two tiles clicked
-    if (selectedImages.length === 2) {
+    // State 3: Both tiles clicked
+    if (selectedTiles.length === 2) {
         verifyBtn.style.display = 'inline';
-    } else {
-        verifyBtn.style.display = 'none';
     }
 }
 
-// 4. Verification Logic
+// State 4: Verification
 verifyBtn.addEventListener('click', () => {
-    // State 4: After clicking Verify
     verifyBtn.style.display = 'none';
     
-    const [first, second] = selectedImages;
-    if (first.className === second.className) {
+    const [first, second] = selectedTiles;
+    
+    if (first.class === second.class) {
         para.textContent = "You are a human. Congratulations!";
     } else {
         para.textContent = "We can't verify you as a human. You selected the non-identical tiles.";
     }
 });
 
-// 5. Reset Behavior
+// Reset Button behavior
 resetBtn.addEventListener('click', init);
 
-// Run on page load
+// Initial Load
 init();
